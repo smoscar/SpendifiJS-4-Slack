@@ -1,0 +1,17 @@
+{
+  "name": "spendifijs",
+  "version": "1.0.0",
+  "description": "Node module that receives photos and extracts text in them",
+  "main": "index.js",
+	"engines": {
+		"node": ">=4.3.0"
+	},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+	"dependencies": {
+		"lwip": "0.0.9"
+	},
+  "author": "Oscar Merlos",
+  "license": "GPL-3.0"
+}
