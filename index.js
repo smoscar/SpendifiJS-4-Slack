@@ -1,32 +1,28 @@
 const cv = require('opencv4nodejs');
-const faces = require('./src/faceDetection');
+const SWT = require('./src/StrokeWidthTransform');
 
 const loadByteImage = name => {
 	let image;
 	try {
 		image = cv.imread(name);
-		image.cvtColor(cv.COLOR_BGR2RGBA);
-		
 		return image;
 	}
 	catch (e){
-		return cv.Mat();
+		return new cv.Mat();
 	}
 }
 
 const mainTextDetection = args => {
-	let byteQueryImage = loadByteImage(args[0]),
-			output;
+	let byteQueryImage = loadByteImage(args[0]);
 	
 	if (byteQueryImage.empty) {
 		console.error("Error while loading image");
 		return false;
 	}
 	
-	output = faces.detectFaces(byteQueryImage, 2, new cv.Vec(255, 0, 0));
-	
+	let output = SWT.textDetection(byteQueryImage, true);
 	if (output){
-		cv.imwrite('./faces.jpg', output);
+		cv.imwrite('./dist/result.jpg', output);
 	}
 };
 
