@@ -10,7 +10,8 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "opencv4nodejs": "^2.4.0"
+    "opencv4nodejs": "^2.4.0",
+    "tesseract.js": "^1.0.10"
   },
   "author": "Oscar Merlos",
   "license": "GPL-3.0"
