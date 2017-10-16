@@ -576,7 +576,7 @@ const makeChains = (colorImage, components, compCenters, compMedians, compDimens
 	}
 	chains.sort( chainSortDist );
 	
-	let strictness = PI/6.0;
+	let strictness = 0;
 	//merge chains
 	let merges = 1;
 	while ( merges > 0 ) {
