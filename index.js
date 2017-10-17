@@ -25,8 +25,8 @@ const mainTextDetection = args => {
 	let output = SWT.textDetection(byteQueryImage, true);
 	if (output){
 		cv.imwrite('./dist/result.jpg', output);
-		let image = require('path').resolve('.', './dist/SWT.png');
-		Tes.recognize(image, {lang: 'eng'})
+		let image = require('path').resolve('.', './dist/result.jpg');
+		Tes.recognize(image, {lang: 'eng'}) 
 			.progress(message => {
 				//if (message.status == "recognizing text")
 				//console.log(parseInt(message.progress*100)+"%")
@@ -37,8 +37,29 @@ const mainTextDetection = args => {
 				//console.log(result.text)
 			})
 			.finally(resultOrError => {
-				console.log(resultOrError.text);
-				console.log("Finished in: " + (((new Date()).getTime() - initTime) / 1000) + " seconds\n")
+				let name = '';
+				let amount = 0;
+				let amountNoD = 0;
+				resultOrError.lines.forEach( (ln, n) => {
+					if ( n < 2 ){
+						name += ln.text.replace(/(\r|\n)/, '') + (n == 1 ? '' : ', ');
+					}
+					else {
+						if (ln.text.match( /\$( |\t)[0-9,\.]*/ )){
+							let num = Number(ln.text.match( /\$( |\t)[0-9,\.]*/ )[0].replace('$','').trim())
+							amount = num > amount ? num : amount;
+						}
+						else if (ln.text.match( /total[^0-9]*[0-9,\.]*/i )){
+							let num = Number(ln.text.match( /t(o|0)tal[^0-9]*[0-9,\.]*/i )[0].replace(/[^0-9,\.]/i,'').trim())
+							amountNoD = num > amountNoD ? num : amountNoD;
+						}
+					}
+				});
+				let res = amount !== 0 && !isNaN(amount) ? amount : (amountNoD !== 0 ? amountNoD : false)
+				console.log(name);
+				console.log(res !== false ? ('$ '+res) : "Couldn't find amount");
+
+				//console.log("Finished in: " + (((new Date()).getTime() - initTime) / 1000) + " seconds\n")
 				process.exit();
 			});
 	}

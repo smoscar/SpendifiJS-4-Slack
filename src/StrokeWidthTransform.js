@@ -1,30 +1,5 @@
 const cv = require('opencv4nodejs');
 const PI = 3.14159265;
-/*
-SWTPoint2d {
-		int x;
-		int y;
-		float SWT;
-}
-Ray {
-				SWTPoint2d p;
-				SWTPoint2d q;
-				std::vector<SWTPoint2d> points;
-}
-struct Point3dFloat {
-		float x;
-		float y;
-		float z;
-}
-Chain {
-		int p;
-		int q;
-		float dist;
-		bool merged;
-		Point2dFloat direction;
-		std::vector<int> components;
-}
-*/
 									 
 const normalizeImage = (input, output) => {
 	if (input.depth != cv.CV_32F || input.channels != 1 || output.depth != cv.CV_32F || output.channels != 1 ){
@@ -314,6 +289,7 @@ const filterComponents = (SWTImage, components) => {
 	let compMedians = [];
 	let compDimensions = [];
 	let compBB = [];
+	let cropRect = { x1:1000000, y1:1000000, x2:-1000000, y2:-1000000 };
 	
 	for( let it = 0; it < components.length; it++ ){
 		// compute the stroke width mean, variance, median
@@ -370,7 +346,7 @@ const filterComponents = (SWTImage, components) => {
 		
 		// compute the diameter TODO finish
 		// compute dense representation of component
-		let denseRepr = [];
+		/*let denseRepr = [];
 		for (let i = 0; i < maxx - minx + 1; i++) {
 			let tmp = [];
 			denseRepr.push(tmp);
@@ -380,12 +356,17 @@ const filterComponents = (SWTImage, components) => {
 		}
 		components[it].forEach( pit => {
 			(denseRepr[pit.x - minx])[pit.y - miny] = 1;
-		});
+		});*/
 		let center = { x: (( maxx + minx ) / 2.0), y: (( maxy + miny ) / 2.0) };
 		let dimensions = { x: ( maxx - minx + 1 ), y: ( maxy - miny + 1 ) };
 		let bb1 = { x: minx, y: miny };
 		let bb2 = { x: maxx, y: maxy };
 		let pair = [ bb1, bb2 ];
+		
+		cropRect.x1 = minx < cropRect.x1 ? minx : cropRect.x1;
+		cropRect.y1 = miny < cropRect.y1 ? miny : cropRect.y1;
+		cropRect.x2 = maxx > cropRect.x2 ? maxx : cropRect.x2;
+		cropRect.y2 = maxy > cropRect.y2 ? maxy : cropRect.y2;
 		
 		compBB.push(pair);
 		compDimensions.push(dimensions);
@@ -684,7 +665,7 @@ const makeChains = (colorImage, components, compCenters, compMedians, compDimens
 	
 	let newchains = [];
 	chains.forEach( cit => {
-		if (cit.components.length >= 2) {
+		if (cit.components.length >= 2) { //OSCAR
 			newchains.push( cit );
 		}
 	});
@@ -720,13 +701,38 @@ exports.textDetection = (input, darkOnLight) => {
 		console.error("Error on input");
 		return false;
 	}
-	
-	const grayImage = input.bgrToGray();
+
 	const threshold_low = 175;
 	const threshold_high = 320;
-	const edgeImage = grayImage.canny(threshold_low, threshold_high, 3);
+	const tolerance = 0.01;
 	
-	cv.imwrite('./dist/canny.jpg', edgeImage);
+	input = input.rescale(0.5);
+	let grayImage = input.bgrToGray();
+	let edgeImage = grayImage.canny(threshold_low, threshold_high, 3);
+	let dilated = edgeImage.dilate( new cv.Mat(), new cv.Point(-1, -1) );
+	let contours = dilated.findContours( cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE );
+	let squares = [];
+	let minX = 1000000;
+	let minY = 1000000;
+	let maxX = 0;
+	let maxY = 0;
+	let square;
+	
+	// Get biggest square found in image and crop edgeImage around it
+	contours.sort( (a, b) => b.area - a.area );
+	square = contours[0].approxPolyDP( contours[0].arcLength( true )*0.02, true );
+	
+	square.forEach( p => {
+		minX = p.x < minX ? p.x : minX;
+		minY = p.y < minY ? p.y : minY;
+		maxX = p.x > maxX ? p.x : maxX;
+		maxY = p.y > maxY ? p.y : maxY;
+	});
+	edgeImage = edgeImage.getRegion( new cv.Rect( minX, minY, (maxX - minX), (maxY - minY) ) );
+	grayImage = grayImage.getRegion( new cv.Rect( minX, minY, (maxX - minX), (maxY - minY) ) );
+	input = input.getRegion( new cv.Rect( minX, minY, (maxX - minX), (maxY - minY) ) );
+	
+	//cv.imwrite('./dist/canny.jpg', dilated);
 	
 	let gaussianImage = grayImage.convertTo(cv.CV_32FC1, 1./255.);
 	gaussianImage = gaussianImage.gaussianBlur( new cv.Size(5, 5), 0 );
@@ -751,7 +757,11 @@ exports.textDetection = (input, darkOnLight) => {
 	let output2 = new cv.Mat( input.rows, input.cols, cv.CV_32FC1 );
 	normalizeImage( SWTImage, output2 );
 	let saveSWT = output2.convertTo( cv.CV_8UC1, 255 );
-	cv.imwrite('./dist/SWT.png', saveSWT);
+	//cv.imwrite('./dist/SWT.png', saveSWT);
+	
+	return saveSWT;
+	
+	//EXPERIMENTAL: Find components to remove potential non letters
 	
 	let components = findLegallyConnectedComponents( SWTImage, rays );
 	
