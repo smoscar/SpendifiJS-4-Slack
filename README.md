@@ -6,6 +6,7 @@
 * **[Features](#features)**
 * **[Requests via Text (video)](#reqtext)**
 * **[Requests via Photo (video)](#reqphoto)**
+* **[Image processing through SWT](#swt)**
 * **[Package Dependencies](#dependencies)**
 * **[How to install](#how-to-install)**
 
@@ -53,7 +54,19 @@ This video shows how easy it is to send a Spend Request with SpendifiJS in Slack
 
 This video shows the process of sending a Spend Request with SpendifiJS via photo.
 
-[![Spendifi via Text](https://img.youtube.com/vi/ZWda8tG8BWc/0.jpg)](https://www.youtube.com/watch?v=ZWda8tG8BWc)
+[![Spendifi via Photo](https://img.youtube.com/vi/mWuRhX72q9M/0.jpg)](https://www.youtube.com/watch?v=mWuRhX72q9M)
+
+<a name="swt"></a>
+
+###Image processing through SWT
+
+[The Stroke Width Transform (SWT)](http://www.math.tau.ac.il/~turkel/imagepapers/text_detection.pdf "The Stroke Width Transform (SWT)") is still considered one of the best text detection algorithms out there. It was implemented in JavaScript as an experiment for this project, but it can easily be ported to C++11 and invoked using the JS bindings contained in this project.
+
+We start by detecting edges using a canny filter. Once we find the biggest polygon we crop the image around it and reduce its resolution to imporve performance. After that we apply the SWT filter to the image and look for the components / letters in it. After that we apply a classifier (Depth First Search) to find lines of components (words / sentences) and remove the unwanted components. Finally we pass the resulting image through OCR and look for the amount and description:
+
+![](https://ezway-imagestore.s3.amazonaws.com/files/2017/10/8203600801508443358.png)
+
+**Note: ** There are still a lot of room for improvement like using a morphological erosion instead of looking for connected components using their heights, a dynamic thresholding to remove unwanted components, etc. Please leave an issue if you think of something else.
 
 <a name="dependencies"></a>
 
@@ -100,4 +113,9 @@ This video shows the process of sending a Spend Request with SpendifiJS via phot
 		$ export SLACKCLIENTID=yourSlackId
 		$ export SLACKCLIENTSECRET=yourSlackAppSecret
 		$ export SLACKVERIFICATIONTOKEN=yourSlackToken
+		$ export SLACKTEAMID=yourSlackTeamId
+		$ export SLACKTEAMNAME=yourSlackTeamName
+		$ export SLACKOAUTHTOKEN=yourSlackOauthToken
+		$ export SLACKBOTOAUTHTOKEN=yourSlackBotOauthToken
+		$ export SLACKBOTUSERID=yourBotUserID
 - Start the server with **node server.js **
