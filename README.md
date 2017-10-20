@@ -12,26 +12,15 @@
 
 <a name="workflow"></a>
 
-###Workflow
+### Workflow
 
 ![](https://ezway-imagestore.s3.amazonaws.com/files/2017/10/5383913201508408928.png)
 
-```flow
-st=>start: User sends spend request in Slack
-op=>operation: The request is received and stored
-cond=>condition: Is the request a photo?
-swt=>operation: Extract the info from the image
-e=>operation: Send info to Slack for approval
-en=>end: Notify the user
-
-st->op->cond
-cond(yes)->swt->e->en
-cond(no)->e->en
-```
+![](https://ezway-imagestore.s3.amazonaws.com/files/2017/10/2189779931508445645.png)
 
 <a name="features"></a>
 
-###Features
+### Features
 
 - BPMN connection to ProcessMaker.io, to accept and reject spend requests.
 - Image recognition to extract amounts and descriptions from receipts.
@@ -42,7 +31,7 @@ cond(no)->e->en
 
 <a name="reqtext"></a>
 
-###Sending requests via Text
+### Sending requests via Text
 
 This video shows how easy it is to send a Spend Request with SpendifiJS in Slack.
 
@@ -50,7 +39,7 @@ This video shows how easy it is to send a Spend Request with SpendifiJS in Slack
 
 <a name="reqphoto"></a>
 
-###Sending requests via Photo
+### Sending requests via Photo
 
 This video shows the process of sending a Spend Request with SpendifiJS via photo.
 
@@ -58,7 +47,7 @@ This video shows the process of sending a Spend Request with SpendifiJS via phot
 
 <a name="swt"></a>
 
-###Image processing through SWT
+### Image processing through SWT
 
 [The Stroke Width Transform (SWT)](http://www.math.tau.ac.il/~turkel/imagepapers/text_detection.pdf "The Stroke Width Transform (SWT)") is still considered one of the best text detection algorithms out there. It was implemented in JavaScript as an experiment for this project, but it can easily be ported to C++11 and invoked using the JS bindings contained in this project.
 
@@ -66,11 +55,11 @@ We start by detecting edges using a canny filter. Once we find the biggest polyg
 
 ![](https://ezway-imagestore.s3.amazonaws.com/files/2017/10/8203600801508443358.png)
 
-**Note: ** There are still a lot of room for improvement like using a morphological erosion instead of looking for connected components using their heights, a dynamic thresholding to remove unwanted components, etc. Please leave an issue if you think of something else.
+**Note:** There are still a lot of room for improvement like using a morphological erosion instead of looking for connected components using their heights, a dynamic thresholding to remove unwanted components, etc. Please leave an issue if you think of something else.
 
 <a name="dependencies"></a>
 
-###Dependencies
+### Dependencies
 
 - **[NodeJS 6.2.2](https://nodejs.org/)**
 - **[OpenCV 3.2.0](https://opencv.org/releases.html)**
@@ -80,7 +69,7 @@ We start by detecting edges using a canny filter. Once we find the biggest polyg
 
 <a name="how-to-install"></a>
 
-###How to Install
+### How to Install
 
 **On your server**
 - Install NodeJS on your server (https://nodejs.org/).
@@ -118,4 +107,4 @@ We start by detecting edges using a canny filter. Once we find the biggest polyg
 		$ export SLACKOAUTHTOKEN=yourSlackOauthToken
 		$ export SLACKBOTOAUTHTOKEN=yourSlackBotOauthToken
 		$ export SLACKBOTUSERID=yourBotUserID
-- Start the server with **node server.js **
+- Start the server with **node server.js**
