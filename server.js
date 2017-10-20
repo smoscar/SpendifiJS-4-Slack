@@ -25,7 +25,7 @@ const loadByteImage = name => {
 }
 
 //Function that detects the text in an image
-const mainTextDetection = (args, token, channel) => {
+const mainTextDetection = (args, team, event) => {
 	let byteQueryImage = loadByteImage( args );
 	let initTime = (new Date()).getTime();
 	
@@ -53,8 +53,8 @@ const mainTextDetection = (args, token, channel) => {
 				let amount = 0;
 				let amountNoD = 0;
 				resultOrError.lines.forEach( (ln, n) => {
-					if ( n < 2 ){
-						name += ln.text.replace(/(\r|\n)/, '') + (n == 1 ? '' : ', ');
+					if ( n < 1 ){
+						name += ln.text.replace(/(\r|\n)/, '').replace(' ', '-');
 					}
 					else {
 						if (ln.text.match( /\$( |\t)[0-9,\.]*/ )){
@@ -72,27 +72,32 @@ const mainTextDetection = (args, token, channel) => {
 				console.log(name);
 				console.log(res !== false ? ('$ '+res) : "Couldn't find amount");
 				
-				// Build the post string from the data object
+				// Build the post string from the data object 
 				let pdata = {
-					token: token,
-					channel: 'testprocess',
-					text: (name + ' - $' + res),
-					as_user: true
+					token: process.env.SLACKVERIFICATIONTOKEN,
+					team_id: team.team_id,
+					team_domain: team.team_name.toLowerCase().replace(' ', ''),
+					channel_id: event.channel,
+					channel_name: "directmessage",
+					user_id: event.user,
+					user_name: event.username,
+					command: "%2Fspendifi",
+					text: (res !== false ? ('$' + res) : "Amount-not-found") + " " + name,
+					response_url: "https%3A%2F%2Fhooks.slack.com%2Fcommands%2F"+team.team_id+"%2F259918753927%2FXGSdZWjV4HwYTl0y71kpCKAB",
+					trigger_id: "258886400164.71382174885.ce8b99ba97e21e9136019ae4ba383ede"
 				};
 				pdata = qs.stringify(pdata);
-
+				
 				// Builf an object of options to indicate where to post to
 				let options = {
-					host: 'slack.com',
-					//port: '443',
-					path: '/api/chat.postMessage',
+					host: 'dpx3wh07.api.processmaker.io',
+					path: '/api/v1/processes/Requester/events/Spendifi%20Request/webhook',
 					method: 'POST',
 					headers: {
-						'Content-Type': 'application/x-www-form-urlencoded',
-						'Content-Length': Buffer.byteLength(pdata)
+						'Content-Type': 'application/x-www-form-urlencoded'
 					}
 				};
-
+				
 				//We send the request to Slack
 				postData( pdata, options, (data) => {
 					//Result from sending message
@@ -132,7 +137,7 @@ const processPost = (req, res, call) => {
 }
 
 //Function that processes the image 
-const processImage = (file, channel, token, botToken) => {
+const processImage = (file, event, team) => {
 	console.log("Downloading image");
 	
 	let filename = file.timestamp;
@@ -144,7 +149,7 @@ const processImage = (file, channel, token, botToken) => {
 		//port: '443',
 		path: filepath,
 		method: 'GET',
-		headers: { 'Authorization': 'Bearer ' + token }
+		headers: { 'Authorization': 'Bearer ' + team.access_token }
 	}, (res) => {
 		
 		//We create a stream to append the image chunks to it
@@ -156,7 +161,7 @@ const processImage = (file, channel, token, botToken) => {
 		
 		res.on('end', () => {
 			fs.writeFileSync( './dist/' + filename + '.jpg', data.read() );
-			mainTextDetection( './dist/' + filename + '.jpg', botToken, channel );
+			mainTextDetection( './dist/' + filename + '.jpg', team, event );
 		});
 	}).end();
 	
@@ -227,25 +232,29 @@ http.createServer( (req, res) => {
 						
 					case "event_callback":
 						let event = req.post.event;
+						
 						//We should look for this in the database first by team id and then by event user to know which token we should use //find_team(req.post.team_id, event.user)
 						let team = { 
 							ok: true,
-						  access_token: 'xoxp-71382174885-248656114993-258969041927-66a4cc528c79f66dfcbddaaf72072382',
+						  access_token: process.env.SLACKOAUTHTOKEN,
 						  scope: 'identify,bot,commands,channels:history,groups:history,im:history,mpim:history,files:read',
-						  user_id: 'U7AKA3CV7',
-						  team_name: 'Velocity Underground',
-						  team_id: 'T23B854S1',
+						  user_id: event.user,
+						  team_name: process.env.SLACKTEAMNAME,
+						  team_id: process.env.SLACKTEAMID,
 						  bot: {
-								bot_user_id: 'U7LUHS879',
-						    bot_access_token: 'xoxb-258969892247-YTnRlPTWBqYDtqOERz8sRnMH'
+								bot_user_id: process.env.SLACKBOTUSERID,
+						    bot_access_token: process.env.SLACKBOTOAUTHTOKEN
 							}
 						};
 						//If a file was sent
 						if ( typeof(event.subtype) !== "undefined" && event.subtype == 'file_share' ){
+							
+							//console.log(req.post);
+							
 							let file = event.file;
 							//If the user sending the image is not the bot
 							if ( typeof(team) !== "undefined" && event.user != team.bot["bot_user_id"] && file.filetype == 'jpg') {
-        				processImage( file, event.channel, team.access_token, team.bot.bot_access_token );
+        				processImage( file, event, team );
 							}
 							// console.log("FILE EVENT");
 							// console.log(file);
